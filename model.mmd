@@ -1,0 +1,55 @@
+erDiagram
+    User ||--o{ Order : "places"
+    Author ||--o{ Book : "writes"
+    Category }|--|{ Book : "categorizes"
+    Order ||--|{ OrderBook : "contains"
+    Book ||--o{ OrderBook : "included_in"
+
+    User {
+        string id PK
+        string fullname
+        string password
+        string email
+        string phoneNumber
+        date createdAt
+        date birthDate
+    }
+
+    Category {
+        string id PK
+        string name
+        string description
+    }
+
+    Author {
+        string id PK
+        string fullname
+        string biography
+    }
+
+    Book {
+        string id PK
+        string isbn UK
+        string title
+        string description
+        string publishingHouse
+        number price
+        string authorId FK
+        number stockQuantity
+    }
+
+    Order {
+        string id PK
+        string userId FK
+        number totalAmount
+        string status
+        date createdAt
+    }
+
+    OrderBook {
+        string id PK
+        string orderId FK
+        string bookId FK
+        number quantity
+        number unitPrice
+    }
