@@ -21,12 +21,12 @@
 3. Book
    - `id` _(PK, string)_: ідентифікатор
    - `isbn` _(string, unique)_: міжнародний книжковий номер
-   - `category` _(FK: Category.name, string)_: категорія
+   - `category` _(FK: Category.id, string)_: категорія
    - `title` _(string)_: назва
    - `description` _(string)_: опис
    - `publishingHouse` _(string)_: назва видавництва
    - `price` _(number)_: ціна
-   - `author` _(FK: Authors.fullname, string)_: автор
+   - `author` _(FK: Authors.id, string)_: автор
    - `stockQuantity` _(number)_: кількість у наявності
 
 4. Author
