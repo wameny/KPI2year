@@ -45,7 +45,7 @@
    - `orderId` _(FK: Order.id, string)_: ідентифікатор замовлення
    - `bookId` _(FK: Book.id, sting)_: ідентифікатор книги
    - `quantity` _(number)_: кількість одиниць книг
-   - `priceTotal` _(number)_: ціна за дану позицію
+   - `unitPrice` _(number)_: ціна за одну книгу в момент замовлення
 
 ## 3. Relationships
 
