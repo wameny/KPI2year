@@ -1,0 +1,53 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+' Актори
+actor "Guest" as Guest
+actor "Authenticated User" as AuthUser
+actor "Admin" as Admin
+actor "Payment Service" as PaymentService <<system>>
+
+' Узагальнення акторів
+AuthUser --|> Guest
+
+rectangle "Book Shop System" {
+    usecase "UC1: Реєструватися" as UC1
+    usecase "UC2: Входити в акаунт" as UC2
+    usecase "UC3: Переглядати каталог товарів" as UC3
+    usecase "UC4: Додавати товари до замовлення" as UC4
+    usecase "UC5: Змінювати кількість товарів" as UC5
+    usecase "UC6: Оформлювати замовлення" as UC6
+    usecase "UC7: Ініціювати оплату" as UC7
+    usecase "UC8: Здійснювати або відхиляти оплату" as UC8
+    usecase "UC9: Переглядати історію замовлень" as UC9
+    usecase "UC10: Керувати каталогом\n(книги, автори, категорії)" as UC10
+    usecase "UC11: Керувати складом" as UC11
+    usecase "UC12: Змінювати статус замовлення" as UC12
+
+    ' Зв'язки між Use Cases
+    UC5 ..> UC4 : <<extend>>
+    UC7 ..> UC8 : <<include>>
+}
+
+' Зв'язки акторів з Use Cases
+Guest --> UC1
+Guest --> UC2
+Guest --> UC3
+
+AuthUser --> UC3
+AuthUser --> UC4
+AuthUser --> UC5
+AuthUser --> UC6
+AuthUser --> UC7
+AuthUser --> UC9
+
+Admin --> UC2
+Admin --> UC3
+Admin --> UC10
+Admin --> UC11
+Admin --> UC12
+
+PaymentService --> UC8
+
+@enduml
