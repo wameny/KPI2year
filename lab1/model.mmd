@@ -4,6 +4,7 @@ erDiagram
     Category }|--|{ Book : "categorizes"
     Order ||--|{ OrderBook : "contains"
     Book ||--o{ OrderBook : "included_in"
+    Order ||--o{ Payment : "paid by"
 
     User {
         string id PK
@@ -53,4 +54,12 @@ erDiagram
         string bookId FK
         number quantity
         number unitPrice
+    }
+
+    Payment {
+        string id PK
+        string orderId FK
+        number amount
+        string status
+        date createdAt
     }
