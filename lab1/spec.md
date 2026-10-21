@@ -40,7 +40,7 @@
    - `id` _(PK, string)_: ідентифікатор
    - `userId` _(FK: User.id, string)_: ідентифікатор користувача
    - `totalAmount` _(number)_: сума замовлення
-   - `status` _(string)_: статус замовлення [PROCESSED, DELIVERED, CANCELLED]
+   - `status` _(string)_: статус замовлення [DRAFT, PROCESSED, PAID, DELIVERED, CANCELLED]
    - `createdAt` _(date)_: дата створення замовлення
 
 6. OrderBook
