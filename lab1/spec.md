@@ -14,6 +14,7 @@
    - `phoneNumber` _(string)_: номер телефону
    - `createdAt` _(date)_: дата створення акаунту
    - `birthDate` _(date)_: дата народження
+   - `role` _(string)_: роль користувача [USER, ADMIN]
 
 2. Category
    - `id` _(PK, string)_: ідентифікатор
