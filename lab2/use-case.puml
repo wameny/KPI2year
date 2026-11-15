@@ -19,7 +19,7 @@ rectangle "Book Shop System" {
     usecase "UC5: Змінювати кількість товарів" as UC5
     usecase "UC6: Оформлювати замовлення" as UC6
     usecase "UC7: Ініціювати оплату" as UC7
-    usecase "UC8: Здійснювати або відхиляти оплату" as UC8
+    usecase "UC8: Повідомити результат оплати" as UC8
     usecase "UC9: Переглядати історію замовлень" as UC9
     usecase "UC10: Керувати каталогом\n(книги, автори, категорії)" as UC10
     usecase "UC11: Керувати складом" as UC11
