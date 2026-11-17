@@ -1,0 +1,31 @@
+@startuml
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor "Authenticated User" as User
+participant "Client UI" as UI
+participant "PaymentService" as Service
+participant "Order" as Order
+
+User -> UI: clickPayButton()
+activate UI
+UI -> Service: initiatePayment(orderId)
+activate Service
+
+Service -> Order: getOrderStatus(orderId)
+activate Order
+Order --> Service: return status (DRAFT / PAID / DELIVERED / CANCELLED)
+deactivate Order
+
+opt Неприпустимий статус замовлення для оплати
+    Service -> Service: validateOrderStatus() -> invalid
+    
+    Service --> UI: return errorResponse(409 Conflict)
+    deactivate Service
+    
+    UI --> User: showInvalidStatusError()[cite: 1]
+    deactivate UI
+end
+
+@enduml

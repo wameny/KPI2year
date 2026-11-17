@@ -1,0 +1,68 @@
+@startuml
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor "Authenticated User" as User
+participant "Client UI" as UI
+participant "PaymentService" as Service
+participant "Order" as Order
+participant "Payment" as Payment
+participant "External Payment Gateway" as Gateway
+
+User -> UI: clickRetryPayButton()
+activate UI
+UI -> Service: retryPayment(orderId)
+activate Service
+
+Service -> Order: getOrderStatus(orderId)
+activate Order
+Order --> Service: return status = "PROCESSED"
+deactivate Order
+
+Service -> Payment: getLastPaymentStatus(orderId)
+activate Payment
+Payment --> Service: return latest status = FAILED
+deactivate Payment
+
+Service -> Payment: createNewPaymentRecord(orderId, PENDING, amount)
+activate Payment
+Payment --> Service: return newPaymentId (історія зберігається)
+deactivate Payment
+
+Service -> Gateway: requestTransaction(newPaymentId, amount)
+activate Gateway
+
+alt Розгалуження результату нової транзакції
+    Gateway --> Service: return result (SUCCESS / FAILED)
+    deactivate Gateway
+    
+    alt Альтернатива А: Успіх
+        Service -> Payment: updatePaymentStatus(newPaymentId, SUCCESS)
+        activate Payment
+        Payment --> Service: confirmed
+        deactivate Payment
+        
+        Service -> Order: updateOrderStatus(orderId, PAID)
+        activate Order
+        Order --> Service: confirmed
+        deactivate Order
+    else Альтернатива Б: Відмова
+        Service -> Payment: updatePaymentStatus(newPaymentId, FAILED)
+        activate Payment
+        Payment --> Service: confirmed
+        deactivate Payment
+        
+        Service -> Order: keepOrderStatus(orderId, PROCESSED)
+        activate Order
+        Order --> Service: confirmed
+        deactivate Order
+    end
+
+    Service --> UI: return paymentResultResponse()
+    deactivate Service
+    UI --> User: showPaymentResult()
+    deactivate UI
+end
+
+@enduml

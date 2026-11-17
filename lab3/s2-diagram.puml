@@ -1,0 +1,56 @@
+@startuml
+autonumber
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+actor "Authenticated User" as User
+participant "Client UI" as UI
+participant "PaymentService" as Service
+participant "Order" as Order
+participant "Payment" as Payment
+participant "External Payment Gateway" as Gateway
+
+User -> UI: clickPayButton()
+activate UI
+UI -> Service: initiatePayment(orderId)
+activate Service
+
+Service -> Order: getOrderStatus(orderId)
+activate Order
+Order --> Service: return status = "PROCESSED"
+deactivate Order
+
+Service -> Payment: checkExistingPayments(orderId)
+activate Payment
+Payment --> Service: return ok
+deactivate Payment
+
+Service -> Payment: createPaymentRecord(orderId, PENDING, amount)
+activate Payment
+Payment --> Service: return paymentId
+deactivate Payment
+
+Service -> Gateway: requestTransaction(paymentId, amount)
+activate Gateway
+
+alt Відхилення транзакції (недостатньо коштів)
+    Gateway --> Service: return FAILED
+    deactivate Gateway
+    
+    Service -> Payment: updatePaymentStatus(paymentId, FAILED)
+    activate Payment
+    Payment --> Service: confirmed
+    deactivate Payment
+    
+    Service -> Order: getOrderStatus(orderId) [лишається PROCESSED]
+    activate Order
+    Order --> Service: status = PROCESSED
+    deactivate Order
+    
+    Service --> UI: return errorResponse("Payment declined")
+    deactivate Service
+    UI --> User: showErrorNotification()
+    deactivate UI
+end
+
+@enduml
