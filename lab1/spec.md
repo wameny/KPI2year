@@ -54,7 +54,7 @@
    - `id` _(PK, string)_: ідентифікатор
    - `orderId` _(FK: Order.id, string)_: ідентифікатор замовлення
    - `amount` _(number)_: сума, передана платіжному сервісу
-   - `status` _(string)_: результат оплати [SUCCESS, FAILED]
+   - `status` _(string)_: результат оплати [SUCCESS, DECLINED, INSUFFICIENT_FUNDS, UNKNOWN]
    - `createdAt` _(date)_: дата спроби оплати
 
 ## 3. Relationships
