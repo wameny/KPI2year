@@ -28,10 +28,11 @@
 3. **PaymentService** запитує статус замовлення у **Order** (перевіряє, чи статус `PROCESSED`) та відсутність активних платежів у **Payment**.
 4. **PaymentService** створює новий запис у **Payment** зі статусом `PENDING` та сумою замовлення (`totalAmount`).
 5. **PaymentService** передає запит на транзакцію до **External Payment Gateway**.
-6. **External Payment Gateway** повертає відмову в транзакції (наприклад, недостатньо коштів або інша причина).
-7. **PaymentService** оновлює статус запису в **Payment** на `FAILED`.
-8. **PaymentService** залишає статус замовлення в **Order** без змін (`PROCESSED`).
-9. **Client UI** виводить користувачеві повідомлення про відхилення платежу.
+6. **[Розгалуження помилок платіжного шлюзу]:**
+   - _Альтернатива А (Відмова банку / Declined):_ **External Payment Gateway** повертає статус `DECLINED` (наприклад, картку заблоковано або ліміт перевищено). **PaymentService** оновлює статус запису в **Payment** на `DECLINED`, а замовлення в **Order** залишає без змін (`PROCESSED`).
+   - _Альтернатива Б (Недостатньо коштів / Insufficient Funds):_ **External Payment Gateway** повертає статус `INSUFFICIENT_FUNDS`. **PaymentService** оновлює статус запису в **Payment** на `FAILED`, а замовлення в **Order** залишає у статусі `PROCESSED`.
+   - _Альтернатива В (Технічний збій / Unknown):_ **External Payment Gateway** не відповідає вчасно або повертає `UNKNOWN`. **PaymentService** фіксує статус запису в **Payment** як `UNKNOWN`, залишаючи **Order** у статусі `PROCESSED` для можливості повторної перевірки або спроби.
+7. **Client UI** виводить користувачеві деталізоване повідомлення про причину відхилення платежу.
 
 ### S3: Повторна ініціація оплати
 

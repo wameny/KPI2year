@@ -22,35 +22,66 @@ deactivate Order
 
 Service -> Payment: checkExistingPayments(orderId)
 activate Payment
-Payment --> Service: return ok
+Payment --> Service: return no active payments
 deactivate Payment
 
-Service -> Payment: createPaymentRecord(orderId, PENDING, amount)
+Service -> Payment: createPaymentRecord(orderId, PENDING, totalAmount)
 activate Payment
 Payment --> Service: return paymentId
 deactivate Payment
 
-Service -> Gateway: requestTransaction(paymentId, amount)
+Service -> Gateway: requestTransaction(paymentId, totalAmount)
 activate Gateway
 
-alt Відхилення транзакції (недостатньо коштів)
-    Gateway --> Service: return FAILED
+alt Альтернатива А: Відмова банку (Declined)
+    Gateway --> Service: return DECLINED
     deactivate Gateway
+    
+    Service -> Payment: updatePaymentStatus(paymentId, DECLINED)
+    activate Payment
+    Payment --> Service: confirmed
+    deactivate Payment
+    
+    Service -> Order: keepOrderStatus(orderId, PROCESSED)
+    activate Order
+    Order --> Service: status = PROCESSED
+    deactivate Order
+    
+    Service --> UI: return errorResponse("DECLINED")
+
+else Альтернатива Б: Недостатньо коштів (Insufficient Funds)
+    Gateway --> Service: return INSUFFICIENT_FUNDS
     
     Service -> Payment: updatePaymentStatus(paymentId, FAILED)
     activate Payment
     Payment --> Service: confirmed
     deactivate Payment
     
-    Service -> Order: getOrderStatus(orderId) [лишається PROCESSED]
+    Service -> Order: keepOrderStatus(orderId, PROCESSED)
     activate Order
     Order --> Service: status = PROCESSED
     deactivate Order
     
-    Service --> UI: return errorResponse("Payment declined")
-    deactivate Service
-    UI --> User: showErrorNotification()
-    deactivate UI
+    Service --> UI: return errorResponse("INSUFFICIENT_FUNDS")
+
+else Альтернатива В: Технічний збій / Таймаут (Unknown)
+    Gateway --> Service: return UNKNOWN / TIMEOUT
+    
+    Service -> Payment: updatePaymentStatus(paymentId, UNKNOWN)
+    activate Payment
+    Payment --> Service: confirmed
+    deactivate Payment
+    
+    Service -> Order: keepOrderStatus(orderId, PROCESSED)
+    activate Order
+    Order --> Service: status = PROCESSED
+    deactivate Order
+    
+    Service --> UI: return errorResponse("UNKNOWN")
 end
+
+deactivate Service
+UI --> User: showDetailedDeclineReason()
+deactivate UI
 
 @enduml
