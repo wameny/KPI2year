@@ -5,82 +5,99 @@ skinparam ParticipantPadding 10
 
 actor "Authenticated User" as User
 participant "Client UI" as UI
-participant "PaymentService" as Service
+participant "BookService" as BookSvc
+participant "PaymentService" as PaySvc
 participant "Order" as Order
 participant "Payment" as Payment
+participant "Book" as Book
 participant "External Payment Gateway" as Gateway
 
 User -> UI: clickPayButton()
 activate UI
-UI -> Service: initiatePayment(orderId)
-activate Service
 
-Service -> Order: getOrderStatus(orderId)
+UI -> BookSvc: reserveBooks(orderId)
+activate BookSvc
+BookSvc -> Book: increaseReservedQuantity(bookId)
+activate Book
+Book --> BookSvc: confirmed
+deactivate Book
+BookSvc --> UI: reserved successfully
+deactivate BookSvc
+
+UI -> PaySvc: initiatePayment(orderId)
+activate PaySvc
+
+PaySvc -> Order: getOrderStatus(orderId)
 activate Order
-Order --> Service: return status = "PROCESSED"
+Order --> PaySvc: return status = "PROCESSED"
 deactivate Order
 
-Service -> Payment: checkExistingPayments(orderId)
+PaySvc -> Payment: checkExistingPayments(orderId)
 activate Payment
-Payment --> Service: return no active payments
+Payment --> PaySvc: return no active payments
 deactivate Payment
 
-Service -> Payment: createPaymentRecord(orderId, PENDING, totalAmount)
+PaySvc -> Payment: createPaymentRecord(orderId, PENDING, totalAmount)
 activate Payment
-Payment --> Service: return paymentId
+Payment --> PaySvc: return paymentId
 deactivate Payment
 
-Service -> Gateway: requestTransaction(paymentId, totalAmount)
+PaySvc -> Gateway: requestTransaction(paymentId, totalAmount)
 activate Gateway
 
-alt Альтернатива А: Відмова банку (Declined)
-    Gateway --> Service: return DECLINED
+alt Розгалуження помилок платіжного шлюзу
+    Gateway --> PaySvc: return DECLINED
     deactivate Gateway
     
-    Service -> Payment: updatePaymentStatus(paymentId, DECLINED)
+    PaySvc -> Payment: updatePaymentStatus(paymentId, DECLINED)
     activate Payment
-    Payment --> Service: confirmed
+    Payment --> PaySvc: confirmed
     deactivate Payment
     
-    Service -> Order: keepOrderStatus(orderId, PROCESSED)
+    PaySvc -> Order: keepOrderStatus(orderId, PROCESSED)
     activate Order
-    Order --> Service: status = PROCESSED
+    Order --> PaySvc: status = PROCESSED
     deactivate Order
-    
-    Service --> UI: return errorResponse("DECLINED")
 
-else Альтернатива Б: Недостатньо коштів (Insufficient Funds)
-    Gateway --> Service: return INSUFFICIENT_FUNDS
+else Альтернатива Б: Недостатньо коштів (INSUFFICIENT_FUNDS)
+    Gateway --> PaySvc: return INSUFFICIENT_FUNDS
     
-    Service -> Payment: updatePaymentStatus(paymentId, FAILED)
+    PaySvc -> Payment: updatePaymentStatus(paymentId, INSUFFICIENT_FUNDS)
     activate Payment
-    Payment --> Service: confirmed
+    Payment --> PaySvc: confirmed
     deactivate Payment
     
-    Service -> Order: keepOrderStatus(orderId, PROCESSED)
+    PaySvc -> Order: keepOrderStatus(orderId, PROCESSED)
     activate Order
-    Order --> Service: status = PROCESSED
+    Order --> PaySvc: status = PROCESSED
     deactivate Order
-    
-    Service --> UI: return errorResponse("INSUFFICIENT_FUNDS")
 
-else Альтернатива В: Технічний збій / Таймаут (Unknown)
-    Gateway --> Service: return UNKNOWN / TIMEOUT
+else Альтернатива В: Технічний збій / Таймаут (UNKNOWN)
+    Gateway --> PaySvc: return UNKNOWN
     
-    Service -> Payment: updatePaymentStatus(paymentId, UNKNOWN)
+    PaySvc -> Payment: updatePaymentStatus(paymentId, UNKNOWN)
     activate Payment
-    Payment --> Service: confirmed
+    Payment --> PaySvc: confirmed
     deactivate Payment
     
-    Service -> Order: keepOrderStatus(orderId, PROCESSED)
+    PaySvc -> Order: keepOrderStatus(orderId, PROCESSED)
     activate Order
-    Order --> Service: status = PROCESSED
+    Order --> PaySvc: status = PROCESSED
     deactivate Order
-    
-    Service --> UI: return errorResponse("UNKNOWN")
 end
 
-deactivate Service
+PaySvc --> UI: errorResponse()
+deactivate PaySvc
+
+UI -> BookSvc: releaseReservedBooks(orderId)
+activate BookSvc
+BookSvc -> Book: decreaseReservedQuantity(bookId)
+activate Book
+Book --> BookSvc: confirmed (stockQuantity unchanged)
+deactivate Book
+BookSvc --> UI: reservation released
+deactivate BookSvc
+
 UI --> User: showDetailedDeclineReason()
 deactivate UI
 

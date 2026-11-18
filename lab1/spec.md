@@ -30,6 +30,7 @@
    - `price` _(number)_: ціна
    - `author` _(FK: Authors.id, string)_: автор
    - `stockQuantity` _(number)_: кількість у наявності
+   - `reservedQuantity` _(number)_: кількість зарезервованих книг
 
 4. Author
    - `id` _(PK, string)_: ідентифікатор

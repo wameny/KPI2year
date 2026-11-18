@@ -5,52 +5,71 @@ skinparam ParticipantPadding 10
 
 actor "Authenticated User" as User
 participant "Client UI" as UI
-participant "PaymentService" as Service
+participant "BookService" as BookSvc
+participant "PaymentService" as PaySvc
 participant "Order" as Order
 participant "Payment" as Payment
+participant "Book" as Book
 participant "External Payment Gateway" as Gateway
 
 User -> UI: clickPayButton()
 activate UI
-UI -> Service: initiatePayment(orderId)
-activate Service
 
-Service -> Order: getOrderStatus(orderId)
+UI -> BookSvc: reserveBooks(orderId)
+activate BookSvc
+BookSvc -> Book: increaseReservedQuantity(bookId)
+activate Book
+Book --> BookSvc: confirmed
+deactivate Book
+BookSvc --> UI: reserved successfully
+deactivate BookSvc
+
+UI -> PaySvc: initiatePayment(orderId)
+activate PaySvc
+
+PaySvc -> Order: getOrderStatus(orderId)
 activate Order
 Order --> Service: return status = "PROCESSED"
 deactivate Order
 
-Service -> Payment: checkExistingPayments(orderId)
+PaySvc -> Payment: checkExistingPayments(orderId)
 activate Payment
-Payment --> Service: return no active/success payments
+Payment --> PaySvc: return no active payments
 deactivate Payment
 
-Service -> Payment: createPaymentRecord(orderId, PENDING, amount)
+PaySvc -> Payment: createPaymentRecord(orderId, PENDING, totalAmount)
 activate Payment
-Payment --> Service: return paymentId
+Payment --> PaySvc: return paymentId
 deactivate Payment
 
-Service -> Gateway: requestTransaction(paymentId, amount)
+PaySvc -> Gateway: requestTransaction(paymentId, totalAmount)
 activate Gateway
+Gateway --> PaySvc: return SUCCESS
+deactivate Gateway
 
-alt Успішна транзакція
-    Gateway --> Service: return SUCCESS
-    deactivate Gateway
-    
-    Service -> Payment: updatePaymentStatus(paymentId, SUCCESS)
-    activate Payment
-    Payment --> Service: confirmed
-    deactivate Payment
-    
-    Service -> Order: updateOrderStatus(orderId, PAID)
-    activate Order
-    Order --> Service: confirmed
-    deactivate Order
-    
-    Service --> UI: return successResponse()
-    deactivate Service
-    UI --> User: showSuccessMessage()
-    deactivate UI
-end
+PaySvc -> Payment: updatePaymentStatus(paymentId, SUCCESS)
+activate Payment
+Payment --> PaySvc: confirmed
+deactivate Payment
+
+PaySvc -> Order: updateOrderStatus(orderId, PAID)
+activate Order
+Order --> PaySvc: confirmed
+deactivate Order
+
+PaySvc --> UI: paymentSuccessResponse()
+deactivate PaySvc
+
+UI -> BookSvc: finalizeOrderStock(orderId)
+activate BookSvc
+BookSvc -> Book: decreaseStockAndReservedQuantity(bookId)
+activate Book
+Book --> BookSvc: confirmed
+deactivate Book
+BookSvc --> UI: stock updated
+deactivate BookSvc
+
+UI --> User: showSuccessMessage()
+deactivate UI
 
 @enduml

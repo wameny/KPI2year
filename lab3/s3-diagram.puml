@@ -22,22 +22,22 @@ deactivate Order
 
 Service -> Payment: getLastPaymentStatus(orderId)
 activate Payment
-Payment --> Service: return latest status = FAILED
+Payment --> Service: return latest status (DECLINED / INSUFFICIENT_FUNDS / UNKNOWN)
 deactivate Payment
 
 Service -> Payment: createNewPaymentRecord(orderId, PENDING, amount)
 activate Payment
-Payment --> Service: return newPaymentId (історія зберігається)
+Payment --> Service: return newPaymentId (історія попередніх спроб зберігається)
 deactivate Payment
 
 Service -> Gateway: requestTransaction(newPaymentId, amount)
 activate Gateway
 
 alt Розгалуження результату нової транзакції
-    Gateway --> Service: return result (SUCCESS / FAILED)
+    Gateway --> Service: return result
     deactivate Gateway
     
-    alt Альтернатива А: Успіх
+    alt Альтернатива А: Успіх (SUCCESS)
         Service -> Payment: updatePaymentStatus(newPaymentId, SUCCESS)
         activate Payment
         Payment --> Service: confirmed
@@ -47,15 +47,38 @@ alt Розгалуження результату нової транзакці�
         activate Order
         Order --> Service: confirmed
         deactivate Order
-    else Альтернатива Б: Відмова
-        Service -> Payment: updatePaymentStatus(newPaymentId, FAILED)
+        
+    else Альтернатива Б: Відмова банку (DECLINED)
+        Service -> Payment: updatePaymentStatus(newPaymentId, DECLINED)
         activate Payment
         Payment --> Service: confirmed
         deactivate Payment
         
         Service -> Order: keepOrderStatus(orderId, PROCESSED)
         activate Order
-        Order --> Service: confirmed
+        Order --> Service: status = PROCESSED
+        deactivate Order
+        
+    else Альтернатива В: Недостатньо коштів (INSUFFICIENT_FUNDS)
+        Service -> Payment: updatePaymentStatus(newPaymentId, INSUFFICIENT_FUNDS)
+        activate Payment
+        Payment --> Service: confirmed
+        deactivate Payment
+        
+        Service -> Order: keepOrderStatus(orderId, PROCESSED)
+        activate Order
+        Order --> Service: status = PROCESSED
+        deactivate Order
+
+    else Альтернатива Г: Невідома помилка / Таймаут (UNKNOWN)
+        Service -> Payment: updatePaymentStatus(newPaymentId, UNKNOWN)
+        activate Payment
+        Payment --> Service: confirmed
+        deactivate Payment
+        
+        Service -> Order: keepOrderStatus(orderId, PROCESSED)
+        activate Order
+        Order --> Service: status = PROCESSED
         deactivate Order
     end
 
